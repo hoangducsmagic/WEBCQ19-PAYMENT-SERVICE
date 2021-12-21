@@ -30,6 +30,18 @@ exports.getQuery = function (sqlQuery) {
     });
 };
 
+exports.getOne = function (sqlQuery) {  // execute and get query data which have at most 1 result
+    return new Promise((resolve, reject) => {
+        pool.query(sqlQuery, (err, res) => {
+            if (!err) resolve(res.rows[0]);
+            else {
+                console.log(err);
+            }
+            // else reject(err);
+        });
+    });
+};
+
 exports.executeQuery = function (sqlQuery) {
     return new Promise((resolve) => {
         pool.query(sqlQuery, (err, res) => {
