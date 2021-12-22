@@ -7,7 +7,7 @@ const utils=require('../utils/utils')
 
 async function getTokenExpiringTime(token) {    // 1 day
     const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
-    var expiredDate=utils.timestampToDatetime(parseInt(decoded.iat*1000)+24*60*60*1000)
+    var expiredDate=utils.timestampToDatetime(parseInt(decoded.iat)*1000+24*60*60*1000)
     return expiredDate;
 }
 
