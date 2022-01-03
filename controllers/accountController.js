@@ -18,7 +18,8 @@ const getAccountInfo = catchAsync(async (req, res, next) => {
         status: 'success',
         data: {
             username: user.username,
-            balance:user.balance
+            balance: user.balance,
+            dept:user.dept
         }
     })
 })

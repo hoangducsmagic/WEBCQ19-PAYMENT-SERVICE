@@ -29,17 +29,17 @@ async function checkCorrectPassword(user, password) {
 async function createUser(username, password) {
     var hashedPassword = await bcrypt.hash(password, saltRounds);
     var query = `
-        INSERT INTO public."user" (user_id, username, hashed_password, change_password_at, balance)
+        INSERT INTO public."user" (user_id, username, hashed_password, change_password_at, balance,dept)
         VALUES ('${randomUserIdGeneration()}','${username}','${hashedPassword}','${utils.timestampToDatetime(
         Date.now()
-    )}',0)
+    )}',0,0)
     `;
     await db.executeQuery(query);
 }
 
 async function getUserById(userId) {
     var query = `
-        SELECT user_id as "userId", username, hashed_password as "hashedPassword", change_password_at as "changePasswordAt", balance
+        SELECT user_id as "userId", username, hashed_password as "hashedPassword", change_password_at as "changePasswordAt", balance, dept
         FROM public."user"
         WHERE user_id='${userId}'
     `;
@@ -73,6 +73,54 @@ async function paying(userId, amount, date) {
     `
 
     await db.executeQuery(updateUserQuery);
+
+    var adminQuery = `
+        UPDATE public."user"
+        SET balance=balance+${amount}
+        WHERE role='admin'
+    `
+
+    await db.executeQuery(adminQuery);
+
+}
+
+async function paydept(userId, amount, date) {
+    var addTransactionQuery=`
+        INSERT INTO transaction (transaction_id, user_id, amount, date, type)
+        VALUES ('${randomTransactionIdGeneration()}','${userId}',${amount},'${date}',3)
+    `
+
+    await db.executeQuery(addTransactionQuery);
+
+    var updateUserQuery = `
+        UPDATE public."user"
+        SET balance=balance-${amount}, dept=dept-${amount}
+        WHERE user_id='${userId}'
+    `
+
+    await db.executeQuery(updateUserQuery);
+
+    var adminQuery = `
+        UPDATE public."user"
+        SET balance=balance+${amount}
+        WHERE role='admin'
+    `
+
+    await db.executeQuery(adminQuery);
+
+}
+
+async function adddept(userId, amount) {
+    
+
+    var updateUserQuery = `
+        UPDATE public."user"
+        SET dept=dept+${amount}
+        WHERE user_id='${userId}'
+    `
+
+    await db.executeQuery(updateUserQuery);
+
 
 }
 
@@ -115,5 +163,7 @@ module.exports = {
     changePassword,
     paying,
     charging,
-    getPaymentHistory
+    getPaymentHistory,
+    adddept,
+    paydept
 };

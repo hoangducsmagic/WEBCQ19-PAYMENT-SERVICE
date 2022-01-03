@@ -3,8 +3,6 @@ const User = require('../models/userModel')
 const authController=require('./authController');
 const AppError = require('../utils/appError');
 const { timestampToDatetime } = require('../utils/utils');
-const { updateExpressionWithTypeArguments } = require('typescript');
-const { user } = require('pg/lib/defaults');
 
 const pay = catchAsync(async (req, res, next) => {
     const { authToken, amount } = req.body;
@@ -17,12 +15,19 @@ const pay = catchAsync(async (req, res, next) => {
     if (!decoded.userId) return next(decoded);
 
     var user = await User.getUserById(decoded.userId);
+    var actualAmount = 0, dept = 0;
     if (user.balance < amount) {
-        return next(new AppError("Not enough money for transaction!",400))
-    } 
+        //return next(new AppError("Not enough money for transaction!", 400))
+        actualAmount = user.balance;
+        dept = amount - user.balance;
+    } else {
+        actualAmount = amount;
+        dept = 0;
+    }
 
     const date = timestampToDatetime(Date.now());
-    await User.paying(user.userId, amount,date);
+    await User.paying(user.userId, actualAmount, date);
+    if (dept > 0) await User.adddept(user.userId, dept);
 
     res.status(200).json({
         status: 'success',
@@ -30,7 +35,44 @@ const pay = catchAsync(async (req, res, next) => {
             username: user.username,
             date,
             amount,
-            balance: user.balance - amount
+            balance: user.balance - actualAmount,
+            dept: user.dept + dept
+        }
+    })
+})
+
+const payoffdept = catchAsync(async (req, res, next) => {
+    const { authToken, amount } = req.body;
+    
+    if (!authToken || !amount) {
+        return next(new AppError("Please provide authToken and paying amount!", 400)); 
+    }
+
+    const decoded = await authController.decodeToken(authToken);
+    if (!decoded.userId) return next(decoded);
+
+    var user = await User.getUserById(decoded.userId);
+
+    if (user.dept ==0) {
+        return next(new AppError("This account have no dept to pay off!",400))
+    } 
+
+    var actualAmount = Math.min(amount, user.dept);
+    if (user.balance < actualAmount) {
+        return next(new AppError("Not enough money for transaction!",400))
+    } 
+
+    const date = timestampToDatetime(Date.now());
+    await User.paydept(user.userId, actualAmount,date);
+
+    res.status(200).json({
+        status: 'success',
+        data: {
+            username: user.username,
+            date,
+            amount:actualAmount,
+            balance: user.balance - actualAmount,
+            dept:user.dept-actualAmount
         }
     })
 })
@@ -56,7 +98,8 @@ const charge = catchAsync(async (req, res, next) => {
             username: user.username,
             date,
             amount,
-            balance: user.balance + amount
+            balance: user.balance + amount,
+            dept:user.dept
         }
     })
 })
@@ -94,4 +137,4 @@ const getPaymentHistory = catchAsync(async (req, res, next) => {
     })
 })
 
-module.exports={pay,charge,getPaymentHistory}
+module.exports={pay,payoffdept,charge,getPaymentHistory}
