@@ -29,7 +29,7 @@ async function checkCorrectPassword(user, password) {
 async function createUser(username, password) {
     var hashedPassword = await bcrypt.hash(password, saltRounds);
     var query = `
-        INSERT INTO public."user" (user_id, username, hashed_password, change_password_at, balance,dept)
+        INSERT INTO public."user" (user_id, username, hashed_password, change_password_at, balance,debt)
         VALUES ('${randomUserIdGeneration()}','${username}','${hashedPassword}','${utils.timestampToDatetime(
         Date.now()
     )}',0,0)
@@ -39,7 +39,7 @@ async function createUser(username, password) {
 
 async function getUserById(userId) {
     var query = `
-        SELECT user_id as "userId", username, hashed_password as "hashedPassword", change_password_at as "changePasswordAt", balance, dept
+        SELECT user_id as "userId", username, hashed_password as "hashedPassword", change_password_at as "changePasswordAt", balance, debt
         FROM public."user"
         WHERE user_id='${userId}'
     `;
@@ -84,7 +84,7 @@ async function paying(userId, amount, date) {
 
 }
 
-async function paydept(userId, amount, date) {
+async function paydebt(userId, amount, date) {
     var addTransactionQuery=`
         INSERT INTO transaction (transaction_id, user_id, amount, date, type)
         VALUES ('${randomTransactionIdGeneration()}','${userId}',${amount},'${date}',3)
@@ -94,7 +94,7 @@ async function paydept(userId, amount, date) {
 
     var updateUserQuery = `
         UPDATE public."user"
-        SET balance=balance-${amount}, dept=dept-${amount}
+        SET balance=balance-${amount}, debt=debt-${amount}
         WHERE user_id='${userId}'
     `
 
@@ -110,12 +110,12 @@ async function paydept(userId, amount, date) {
 
 }
 
-async function adddept(userId, amount) {
+async function adddebt(userId, amount) {
     
 
     var updateUserQuery = `
         UPDATE public."user"
-        SET dept=dept+${amount}
+        SET debt=debt+${amount}
         WHERE user_id='${userId}'
     `
 
@@ -164,6 +164,6 @@ module.exports = {
     paying,
     charging,
     getPaymentHistory,
-    adddept,
-    paydept
+    adddebt,
+    paydebt
 };
