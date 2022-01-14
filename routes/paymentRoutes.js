@@ -4,7 +4,7 @@ const paymentController=require('../controllers/paymentController')
 
 
 router.post('/pay', paymentController.pay);
-router.post('/payoffdept', paymentController.payoffdept);
+router.post('/payoffdebt', paymentController.payoffdebt);
 router.post('/charge', paymentController.charge);
 router.get('/history', paymentController.getPaymentHistory);
 

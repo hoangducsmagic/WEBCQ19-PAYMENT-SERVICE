@@ -15,19 +15,19 @@ const pay = catchAsync(async (req, res, next) => {
     if (!decoded.userId) return next(decoded);
 
     var user = await User.getUserById(decoded.userId);
-    var actualAmount = 0, dept = 0;
+    var actualAmount = 0, debt = 0;
     if (user.balance < amount) {
         //return next(new AppError("Not enough money for transaction!", 400))
         actualAmount = user.balance;
-        dept = amount - user.balance;
+        debt = amount - user.balance;
     } else {
         actualAmount = amount;
-        dept = 0;
+        debt = 0;
     }
 
     const date = timestampToDatetime(Date.now());
     await User.paying(user.userId, actualAmount, date);
-    if (dept > 0) await User.adddept(user.userId, dept);
+    if (debt > 0) await User.adddebt(user.userId, debt);
 
     res.status(200).json({
         status: 'success',
@@ -36,12 +36,12 @@ const pay = catchAsync(async (req, res, next) => {
             date,
             amount,
             balance: user.balance - actualAmount,
-            dept: user.dept + dept
+            debt: user.debt + debt
         }
     })
 })
 
-const payoffdept = catchAsync(async (req, res, next) => {
+const payoffdebt = catchAsync(async (req, res, next) => {
     const { authToken, amount } = req.body;
     
     if (!authToken || !amount) {
@@ -53,17 +53,17 @@ const payoffdept = catchAsync(async (req, res, next) => {
 
     var user = await User.getUserById(decoded.userId);
 
-    if (user.dept ==0) {
-        return next(new AppError("This account have no dept to pay off!",400))
+    if (user.debt ==0) {
+        return next(new AppError("This account have no debt to pay off!",400))
     } 
 
-    var actualAmount = Math.min(amount, user.dept);
+    var actualAmount = Math.min(amount, user.debt);
     if (user.balance < actualAmount) {
         return next(new AppError("Not enough money for transaction!",400))
     } 
 
     const date = timestampToDatetime(Date.now());
-    await User.paydept(user.userId, actualAmount,date);
+    await User.paydebt(user.userId, actualAmount,date);
 
     res.status(200).json({
         status: 'success',
@@ -72,7 +72,7 @@ const payoffdept = catchAsync(async (req, res, next) => {
             date,
             amount:actualAmount,
             balance: user.balance - actualAmount,
-            dept:user.dept-actualAmount
+            debt:user.debt-actualAmount
         }
     })
 })
@@ -99,7 +99,7 @@ const charge = catchAsync(async (req, res, next) => {
             date,
             amount,
             balance: user.balance + amount,
-            dept:user.dept
+            debt:user.debt
         }
     })
 })
@@ -137,4 +137,4 @@ const getPaymentHistory = catchAsync(async (req, res, next) => {
     })
 })
 
-module.exports={pay,payoffdept,charge,getPaymentHistory}
+module.exports={pay,payoffdebt,charge,getPaymentHistory}
